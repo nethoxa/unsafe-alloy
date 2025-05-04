@@ -429,6 +429,13 @@ impl TransactionRequest {
     /// If required fields are missing. Use `complete_7702` to check if the
     /// request can be built.
     fn build_7702(self) -> Result<TxEip7702, &'static str> {
+        let checked_to = self.to.unwrap();
+
+        let to_address = match checked_to {
+            TxKind::Create => Address::ZERO,
+            TxKind::Call(to) => to,
+        };
+
         Ok(TxEip7702 {
             chain_id: self.chain_id.unwrap(),
             nonce: self.nonce.unwrap(),
@@ -439,7 +446,7 @@ impl TransactionRequest {
             max_priority_fee_per_gas: self
                 .max_priority_fee_per_gas
                 .unwrap(),
-            to: *self.to.unwrap_or_default().to().unwrap(),
+            to: to_address,
             value: self.value.unwrap(),
             input: self.input.into_input().unwrap(),
             access_list: self.access_list.unwrap(),
