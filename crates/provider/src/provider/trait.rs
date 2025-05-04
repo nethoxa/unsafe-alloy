@@ -948,8 +948,7 @@ pub trait Provider<N: Network = Ethereum>: Send + Sync {
         let _handle = self.root().get_heart();
 
         match tx {
-            SendableTx::Builder(mut tx) => {
-                alloy_network::TransactionBuilder::prep_for_submission(&mut tx);
+            SendableTx::Builder(tx) => {
                 let tx_hash = self.client().request("eth_sendTransaction", (tx,)).await?;
                 Ok(PendingTransactionBuilder::new(self.root().clone(), tx_hash))
             }
