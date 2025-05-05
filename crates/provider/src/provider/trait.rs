@@ -30,7 +30,7 @@ use alloy_rpc_types_eth::{
     erc4337::TransactionConditional,
     simulate::{SimulatePayload, SimulatedBlock},
     AccessListResult, BlockId, BlockNumberOrTag, Bundle, EIP1186AccountProofResponse,
-    EthCallResponse, FeeHistory, Filter, FilterChanges, Index, Log, SyncStatus,
+    EthCallResponse, FeeHistory, Filter, FilterChanges, Index, Log, SyncStatus, TransactionRequest,
 };
 use alloy_transport::TransportResult;
 use serde_json::value::RawValue;
@@ -948,7 +948,8 @@ pub trait Provider<N: Network = Ethereum>: Send + Sync {
         let _handle = self.root().get_heart();
 
         match tx {
-            SendableTx::Builder(tx) => {
+            SendableTx::Builder(mut tx) => {
+                alloy_network::TransactionBuilder::prep_for_submission(&mut tx);
                 let tx_hash = self.client().request("eth_sendTransaction", (tx,)).await?;
                 Ok(PendingTransactionBuilder::new(self.root().clone(), tx_hash))
             }
@@ -957,6 +958,16 @@ pub trait Provider<N: Network = Ethereum>: Send + Sync {
                 self.send_raw_transaction(&encoded_tx).await
             }
         }
+    }
+
+    async fn send_transaction_unsafe(
+        &self,
+        tx: TransactionRequest,
+    ) -> TransportResult<PendingTransactionBuilder<N>> {
+        let _handle = self.root().get_heart();
+
+        let tx_hash = self.client().request("eth_sendTransaction", (tx,)).await?;
+        Ok(PendingTransactionBuilder::new(self.root().clone(), tx_hash))
     }
 
     /// Signs a transaction that can be submitted to the network later using
